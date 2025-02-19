@@ -46,20 +46,76 @@ const validateFieldBoolean = async (
     }
   };
 
+const validateFieldSync = (
+  schema: yup.ObjectSchema<any>,
+  field: string,
+  value: any
+): string => {
+  if (value === '') return ''; // 입력값이 비어있으면 에러 메시지 없음
+
+  try {
+    schema.validateSyncAt(field, { [field]: value }); // 동기 방식으로 유효성 검사
+    return ''; // 유효하면 빈 문자열 반환
+  } catch (err) {
+    if (err instanceof yup.ValidationError) {
+      return err.message;
+    }
+    return '유효성 검사 중 오류 발생';
+  }
+};
+
+const validateFieldSyncType = (
+  schema: yup.ObjectSchema<any>,
+  field: string,
+  value: any
+): string => {
+  if (value === '') return ''; // 입력값이 비어있으면 에러 메시지 없음
+
+  try {
+    schema.validateSyncAt(field, { [field]: value }); // 동기 방식으로 유효성 검사
+    return ''; // 유효하면 빈 문자열 반환
+  } catch (err) {
+    if (err instanceof yup.ValidationError) {
+      return err.message;
+    }
+    return '유효성 검사 중 오류 발생';
+  }
+};
+
+
 const validationSchemaUtil = yup.object().shape({
-  email: yup.string().email('유효한 이메일을 입력하세요.').required('이메일을 입력하세요.'),
+  email: yup
+    .string()
+    .email('유효한 이메일을 입력하세요.'),
+    // .required('이메일을 입력하세요.'),
 
   phone: yup
     .string()
     .matches(
       /^01[016789]-?\d{3,4}-?\d{4}$/,
       '유효한 전화번호를 입력하세요. (예: 010-1234-5678)'
-    )
-    .required('전화번호를 입력하세요.'),
+    ),
+    // .required('전화번호를 입력하세요.'),
+
+    startDate: yup.date().required('시작 날짜를 입력해주세요'),
+  endDate: yup
+    .date()
+    .required('종료 날짜를 입력해주세요')
+    .test(
+      'is-greater-than-startDate',
+      '종료 날짜는 시작 날짜 이후여야 합니다.',
+      function (value) {
+        const { startDate } = this.parent;
+        if (!startDate || !value) return true; // 시작 날짜나 종료 날짜가 없으면 검사하지 않음
+        return new Date(value) > new Date(startDate);
+      }
+    ),
 });
 
 export {
     validateField,
     validationSchemaUtil,
-    validateFieldBoolean
+    validateFieldBoolean,
+    validateFieldSync,
+    validateFieldSyncType
 }
